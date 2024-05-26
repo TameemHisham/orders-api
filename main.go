@@ -9,7 +9,7 @@ import (
 
 	"github.com/TameemHisham/orders-api/application"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq" // Import PostgreSQL driver
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -43,23 +43,24 @@ func main() {
 	} else {
 		fmt.Println("DB connected successfully")
 	}
+
+	// Create the necessary tables
 	CreateDatabase(db)
+
 	// Initialize and start the application
-	app := application.New()
-	err = app.Start(context.TODO(), PORT)
+	app := application.New(db)
+	err = app.Start(context.Background(), PORT)
 	if err != nil {
 		log.Fatalf("Failed to start app: %v", err)
 	}
 }
 
-
-func CreateDatabase (db *sql.DB) {
+func CreateDatabase(db *sql.DB) {
 	query := `
 	CREATE TABLE IF NOT EXISTS product
 	(
 		ID SERIAL PRIMARY KEY,
-		FirstName VARCHAR(100) NOT NULL,
-		LastName VARCHAR(100) NOT NULL,
+		Name VARCHAR(100) NOT NULL,
 		Price NUMERIC(6,2) NOT NULL,
 		Availability BOOLEAN,
 		created timestamp DEFAULT NOW()
@@ -67,7 +68,6 @@ func CreateDatabase (db *sql.DB) {
 
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Fatalf("Error creation database connection: %v", err)
+		log.Fatalf("Error creating database connection: %v", err)
 	}
-
 }

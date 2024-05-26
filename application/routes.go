@@ -1,6 +1,7 @@
 package application
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/TameemHisham/orders-api/handler"
@@ -8,22 +9,21 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func (a *App) loadRoutes()  {
-	router := chi.NewRouter()
-	router.Use(middleware.Logger)
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	router.Route("/orders", a.loadOrderRoutes)
-	a.router = router
+func LoadRoutes(router *chi.Mux, db *sql.DB) {
+    router.Use(middleware.Logger)
+    router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(http.StatusOK)
+    })
+    router.Route("/orders", func(router chi.Router) {
+        loadOrderRoutes(router, db)
+    })
 }
 
-
-func  (a *App) loadOrderRoutes(router chi.Router) {
-	orderHandler := &handler.Order{}
-	router.Post("/", orderHandler.Create)
+func loadOrderRoutes(router chi.Router, db *sql.DB) {
+	orderHandler := &handler.Shop{DB: db} // Pass the db instance to the handler
+	router.Post("/{name}-{price}-{availability}", orderHandler.Create)
 	router.Get("/", orderHandler.List)
-	router.Get("/{id}" , orderHandler.GetByID)
+	router.Get("/{id}", orderHandler.GetByID)
 	router.Put("/{id}", orderHandler.UpdateByID)
-	router.Delete("/{id}" , orderHandler.DeleteByID)
+	router.Delete("/{id}", orderHandler.DeleteByID)
 }
