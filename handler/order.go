@@ -91,25 +91,93 @@ func (s *Shop) List(w http.ResponseWriter, r *http.Request)  {
 	
 }
 
-func (s *Shop) GetByID(w http.ResponseWriter, r *http.Request) {
+func (s *Shop) GetByID(w http.ResponseWriter, r *http.Request){
 	ID := chi.URLParam(r, "id")
 	wantedItem := &Item{}
 	query := `SELECT name, price, availability FROM product WHERE id = $1`
 	err := s.DB.QueryRow(query, ID).Scan(&wantedItem.Name, &wantedItem.Price, &wantedItem.Availability)
 	if err != nil {
-		http.Error(w, "Error finding item by id in database", http.StatusInternalServerError)
-		return
-	}
-	
+		http.Error(w, fmt.Sprintf("Error finding item by id in database (ID %v may not EXISTS)", ID), http.StatusInternalServerError)
+	} 			
 	fmt.Println("Get an Item by ID")
 	rend.JSON(w, 200, wantedItem)
-
 }
 
 func (s *Shop) UpdateByID(w http.ResponseWriter, r *http.Request) {
-    fmt.Println("Update an Item by ID")
+	name := chi.URLParam(r, "name")
+	priceStr := chi.URLParam(r, "price")
+	availabilityStr := chi.URLParam(r, "availability")
+	id := chi.URLParam(r, "id")
+	// Convert string values to their respective types
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+			http.Error(w, "Invalid price", http.StatusBadRequest)
+			return
+	}
+
+	availability, err := strconv.ParseBool(availabilityStr)
+	if err != nil {
+			http.Error(w, "Invalid availability", http.StatusBadRequest)
+			return
+	}
+
+	// Create the Item instance
+	itemCreate := &Item{
+			Name:         name,
+			Price:        price,
+			Availability: availability,
+	}
+
+	// Insert the Item into the database
+	query := `UPDATE product SET name=$1, price=$2, availability=$3 WHERE id=$4 RETURNING name, price, availability`
+
+	newData := &Item{}
+	err = s.DB.QueryRow(query, itemCreate.Name, itemCreate.Price, itemCreate.Availability, id).Scan(&newData.Name, &newData.Price, &newData.Availability)
+
+	if err != nil {
+			http.Error(w, "Error inserting item into database", http.StatusInternalServerError)
+			fmt.Print("Error: %w", err)
+			return
+	}
+	// Now you can use the itemCreate variable as needed
+	fmt.Printf("Item Updated: %+v\n", *itemCreate)
+	rend.JSON(w, 200, newData)
+
+
+	
+	
+	fmt.Println("Update an Item by ID")
 }
 
 func (s *Shop) DeleteByID(w http.ResponseWriter, r *http.Request) {
-    fmt.Println("Delete an Item by ID")
+		id := chi.URLParam(r, "id")
+		query := `DELETE FROM product WHERE id=$1;`
+	
+		// Exec returns a result and an error, handle them correctly
+		result, err := s.DB.Exec(query, id)
+		if err != nil {
+			http.Error(w, "Error deleting item from database", http.StatusInternalServerError)
+			fmt.Printf("Error deleting item: %v\n", err)
+			return
+		}
+	
+		// Optionally, check how many rows were affected
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			http.Error(w, "Error retrieving affected rows", http.StatusInternalServerError)
+			fmt.Printf("Error retrieving affected rows: %v\n", err)
+			return
+		}
+	
+		// Inform the user if no rows were affected (e.g., item not found)
+		if rowsAffected == 0 {
+			http.Error(w, "No item found with the provided ID", http.StatusNotFound)
+			return
+		}
+	
+		// Respond with success if the deletion was successful
+		rend.JSON(w, 200, result)
+
+		fmt.Println("Delete an Item by ID")
+	
 }

@@ -24,6 +24,6 @@ func loadOrderRoutes(router chi.Router, db *sql.DB) {
 	router.Post("/{name}-{price}-{availability}", orderHandler.Create)
 	router.Get("/", orderHandler.List)
 	router.Get("/{id}", orderHandler.GetByID)
-	router.Put("/{id}", orderHandler.UpdateByID)
+	router.Put("/{id}/{name}-{price}-{availability}", orderHandler.UpdateByID)
 	router.Delete("/{id}", orderHandler.DeleteByID)
 }
