@@ -5,7 +5,18 @@ import (
 	"net/http"
 )
 
-type Order struct {}
+
+
+
+
+
+
+type Order struct {	
+	FirstName string 
+	LastName string
+	Price float64
+	Availability bool
+}
 
 func (o *Order)  Create (w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Create Order")

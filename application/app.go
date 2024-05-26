@@ -19,9 +19,9 @@ func New() *App {
 	return app
 }
 
-func (a *App) Start(ctx context.Context) error  {
+func (a *App) Start(ctx context.Context, addr string) error  {
 	server := &http.Server{
-		Addr: ":3000",
+		Addr: ":" + addr,
 		Handler: a.router,
 	}	
 	defer server.Close()
